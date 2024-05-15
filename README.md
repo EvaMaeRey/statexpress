@@ -21,7 +21,8 @@
         171…](#geom_post-in-101-characters-geom_expectedvalue-in-113-geom_expectedvalue_label-171)
       - [`geom_means` in 131 characters](#geom_means-in-131-characters)
       - [`geom_grouplabel_at_means()`](#geom_grouplabel_at_means)
-  - [Then using stat\_panel\_sf](#then-using-stat_panel_sf)
+  - [Then using stat\_panel\_sf w/ helper package
+    sf2stat](#then-using-stat_panel_sf-w-helper-package-sf2stat)
   - [Part II. Packaging and documentation 🚧
     ✅](#part-ii-packaging-and-documentation--)
       - [Phase 1. Minimal working
@@ -605,7 +606,7 @@ rep(1, 15) |>
 geom_proportion <- function(...){stat_panel(function(df) df |> summarise(x = sum(x)/length(x), y = 0), ...)}   # this should work for T/F too when rasa_p is in play
 
 last_plot() + 
-  geom_proportion()
+  geom_proportion(shape = "triangle")
 #> Bin width defaults to 1/30 of the range of the data. Pick better value with
 #> `binwidth`.
 ```
@@ -697,7 +698,7 @@ palmerpenguins::penguins %>%
 
 ![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-# Then using stat\_panel\_sf
+# Then using stat\_panel\_sf w/ helper package sf2stat
 
 ``` r
 nc <- sf::st_read(system.file("shape/nc.shp", package="sf"))
@@ -713,16 +714,6 @@ nc <- sf::st_read(system.file("shape/nc.shp", package="sf"))
 geo_reference_northcarolina_county <- nc |>
   dplyr::select(county_name = NAME, fips = FIPS) |>
   sf2stat:::sf_df_prep_for_stat(id_col_name = "county_name")
-#> Warning in st_point_on_surface.sfc(sf::st_zm(dplyr::pull(sf_df, geometry))):
-#> st_point_on_surface may not give correct results for longitude/latitude data
-#> Warning: The `x` argument of `as_tibble.matrix()` must have unique column names if
-#> `.name_repair` is omitted as of tibble 2.0.0.
-#> ℹ Using compatibility `.name_repair`.
-#> ℹ The deprecated feature was likely used in the sf2stat package.
-#>   Please report the issue to the authors.
-#> This warning is displayed once every 8 hours.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-#> generated.
 
 # failing with default aes... :-(
 
@@ -732,14 +723,12 @@ stat_nc_counties <- function(...){
   
 }
 
-geo_reference_northcarolina_county %>% 
+nc %>% 
   sf::st_drop_geometry() %>% 
 ggplot() + 
-  aes(fips = fips) +
+  aes(fips = FIPS) +
   stat_nc_counties() + 
   stat_nc_counties(geom = "text")
-#> Joining with `by = join_by(fips)`
-#> Joining with `by = join_by(fips)`
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
@@ -749,16 +738,13 @@ ggplot() +
 nc %>% 
   sf::st_drop_geometry() %>% 
 ggplot() + 
-  aes(fips = fips) +
+  aes(fips = FIPS) +
   stat_nc_counties() + 
   stat_nc_counties(geom = "text",
-                   mapping = aes(label = SID74))
-#> Error in `stat_panel_sf()`:
-#> ! Problem while computing aesthetics.
-#> ℹ Error occurred in the 1st layer.
-#> Caused by error:
-#> ! object 'fips' not found
+                   mapping = aes(label = SID74)) # why?
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
 
 # Part II. Packaging and documentation 🚧 ✅
 
@@ -808,13 +794,26 @@ ggplot(cars) +
   aes(speed, dist) + 
   geom_point() + 
   geom_xmean(size = 8, shape = "diamond") 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
 
 last_plot() + 
   aes(color = dist > 50)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-22-2.png)<!-- -->
+
+``` r
 
 last_plot() + 
   geom_xmean(mapping = aes(size = dist > 75))
+#> Warning: Using size for a discrete variable is not advised.
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-22-3.png)<!-- -->
 
 # Bit 8: Compile readme
 
@@ -944,6 +943,10 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-17-2.png
 #> │       ├── unnamed-chunk-18-1.png
 #> │       ├── unnamed-chunk-19-1.png
+#> │       ├── unnamed-chunk-19-2.png
+#> │       ├── unnamed-chunk-22-1.png
+#> │       ├── unnamed-chunk-22-2.png
+#> │       ├── unnamed-chunk-22-3.png
 #> │       ├── unnamed-chunk-7-1.png
 #> │       ├── unnamed-chunk-7-2.png
 #> │       ├── unnamed-chunk-8-1.png

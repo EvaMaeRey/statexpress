@@ -542,7 +542,7 @@ rep(1, 15) |>
 geom_proportion <- function(...){stat_panel(function(df) df |> summarise(x = sum(x)/length(x), y = 0), ...)}   # this should work for T/F too when rasa_p is in play
 
 last_plot() + 
-  geom_proportion()
+  geom_proportion(shape = "triangle")
 
 geom_proportion_label <- function(...){stat_panel(function(df) df |> summarise(x = sum(x)/length(x), y = 0) |> mutate(label = round(x,2)), vjust = 0, "text", ...)}   # this should work for T/F too when rasa_p is in play
 
@@ -608,9 +608,9 @@ palmerpenguins::penguins %>%
 
 
 
-# Then using stat_panel_sf
+# Then using stat_panel_sf w/ helper package sf2stat
 
-```{r}
+```{r, warning = F, message = F}
 nc <- sf::st_read(system.file("shape/nc.shp", package="sf"))
 
 geo_reference_northcarolina_county <- nc |>
@@ -625,20 +625,20 @@ stat_nc_counties <- function(...){
   
 }
 
-geo_reference_northcarolina_county %>% 
+nc %>% 
   sf::st_drop_geometry() %>% 
 ggplot() + 
-  aes(fips = fips) +
+  aes(fips = FIPS) +
   stat_nc_counties() + 
   stat_nc_counties(geom = "text")
 
 nc %>% 
   sf::st_drop_geometry() %>% 
 ggplot() + 
-  aes(fips = fips) +
+  aes(fips = FIPS) +
   stat_nc_counties() + 
   stat_nc_counties(geom = "text",
-                   mapping = aes(label = SID74))
+                   mapping = aes(label = SID74)) # why?
 ```
 
 
@@ -681,7 +681,7 @@ remotes::install_github("EvaMaeRey/statExpress")
 
 Once functions are exported you can remove go to two colons, and when things are are really finalized, then go without colons (and rearrange your readme...)
 
-```{r, eval = F}
+```{r, eval = T}
 library(statexpress)
 
 geom_xmean <- function(...){statexpress:::stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
