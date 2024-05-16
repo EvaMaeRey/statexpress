@@ -87,12 +87,6 @@ knitrExtra:::chunk_to_r("b_stat_group")
 ```
 
 ``` r
-StatRasagroup <- ggplot2::ggproto(
-  `_class` = "StatRasagroup", 
-  `_inherit` = ggplot2::Stat,
-  compute_group = compute_rasa
-  )
-
 # stat function used in ggplot - but reordered from conventional!
 stat_group <- function(fun = NULL,
                        geom = "point", 
@@ -105,8 +99,15 @@ stat_group <- function(fun = NULL,
                       ...,
                       show.legend = NA,
                       inherit.aes = TRUE) {
+  
+   StatRasagroup <- ggplot2::ggproto(
+   `_class` = "StatRasagroup", 
+   `_inherit` = ggplot2::Stat,
+   compute_group = compute_rasa
+   )
+  
    # Check arguments 
-   if (!is.function(fun)) stop("compute_group_fun must be a function")
+   if (!is.function(fun)) stop("fun must be a function")
    
    # Pass dotted arguments to a list
    fun.args <- match.call(expand.dots = FALSE)$`...`
@@ -145,10 +146,7 @@ knitrExtra:::chunk_to_r("c_stat_panel")
 ```
 
 ``` r
-StatRasapanel <- 
-  ggplot2::ggproto("StatRasapanel", 
-                   ggplot2::Stat,
-                   compute_panel = compute_rasa)
+
 
 
 # stat function used in ggplot - we reorder from conventional
@@ -162,6 +160,12 @@ stat_panel <- function(fun = NULL,
                       ...,
                       show.legend = NA,
                       inherit.aes = TRUE) {
+
+   StatRasapanel <- 
+   ggplot2::ggproto("StatRasapanel", 
+                   ggplot2::Stat,
+                   compute_panel = compute_rasa)
+  
    # Check arguments 
    if (!is.function(fun)) stop ("fun must be a function")
    
@@ -226,6 +230,11 @@ stat_panel_sf <- function(geo_ref_data = NULL,
                       crs = "NAD27" # "NAD27", 5070, "WGS84", "NAD83", 4326 , 3857
 ) {
   
+  StatRasapanel <- 
+   ggplot2::ggproto("StatRasapanel", 
+                   ggplot2::Stat,
+                   compute_panel = compute_rasa)
+  
     if(!is.null(geo_ref_data) & is.null(fun)){
     
       
@@ -287,9 +296,10 @@ stat_panel_sf <- function(geo_ref_data = NULL,
 ## geom\_means
 
 ``` r
+library(tidyverse)
 group_means <- function(data){
   
- data %>% 
+ data |> 
     summarise(x = mean(x),
               y = mean(y))
   
@@ -305,12 +315,17 @@ mtcars |>
       y = mpg) + 
   geom_point() + 
   geom_means(size = 6)
-#> Error in ggplot(mtcars): could not find function "ggplot"
+```
+
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
 
 last_plot() + 
   aes(color = factor(cyl))
-#> Error in last_plot(): could not find function "last_plot"
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ## geom\_center\_label
 
@@ -336,12 +351,24 @@ palmerpenguins::penguins |>
   geom_point() +
   aes(label = "All") +
   geom_center_label()
-#> Error in ggplot(palmerpenguins::penguins): could not find function "ggplot"
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+```
+
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+``` r
 
 
 last_plot() +
   aes(color = species, label = species)
-#> Error in last_plot(): could not find function "last_plot"
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+```
+
+![](README_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+
+``` r
 
 
 geom_center_text <- function(...){
@@ -361,10 +388,23 @@ palmerpenguins::penguins |>
                     alpha = .8,
                    size = 5, 
                    fontface = "bold")
-#> Error in ggplot(palmerpenguins::penguins): could not find function "ggplot"
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+```
+
+![](README_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
+
+``` r
 
 layer_data(i = 2)
-#> Error in layer_data(i = 2): could not find function "layer_data"
+#>       label        x        y PANEL group colour size angle hjust vjust alpha
+#> 1    Adelie 38.79139 18.34636     1    -1  Black    5     0   0.5   0.5   0.8
+#> 2 Chinstrap 48.83382 18.42059     1    -1  Black    5     0   0.5   0.5   0.8
+#> 3    Gentoo 47.50488 14.98211     1    -1  Black    5     0   0.5   0.5   0.8
+#>   family fontface lineheight
+#> 1            bold        1.2
+#> 2            bold        1.2
+#> 3            bold        1.2
 ```
 
 ## geom\_post
@@ -390,8 +430,9 @@ data.frame(outcome = 0:1, prob = c(.4, .6)) |>
   geom_post() + 
   geom_point() + 
   labs(title = "probability by outcome")
-#> Error in ggplot(data.frame(outcome = 0:1, prob = c(0.4, 0.6))): could not find function "ggplot"
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ## geom\_xmean
 
@@ -414,12 +455,17 @@ mtcars |>
       y = mpg) + 
   geom_point() + 
   geom_xmean(linetype = "dashed")
-#> Error in ggplot(mtcars): could not find function "ggplot"
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
 
 last_plot() + 
   aes(color = factor(cyl))
-#> Error in last_plot(): could not find function "last_plot"
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ## geom\_quantile
 
@@ -433,7 +479,7 @@ compute_xy_quantile <- function(data, q = .5){
 }
 
 geom_quantile <- function(...){
-  stat_group(fun = compute_xy_quantile, ...)
+  stat_group(fun = compute_xy_quantile, "point", ...)  #adding point means that aes is automatically figured out! ok
 }
 
 mtcars |>
@@ -441,11 +487,12 @@ mtcars |>
   aes(x = wt,
       y = mpg) +
   geom_point() +
-  geom_quantile(size = 8, color = "red", q = .5) +
-  geom_quantile(size = 8, q = 1) +
-  geom_quantile(size = 8, q = .9)
-#> Error in ggplot(mtcars): could not find function "ggplot"
+  geom_quantile(size = 8, aes(color = "q = .5"), q = .5) +
+  geom_quantile(size = 8, q = 1, aes(color = "q =  1")) +
+  geom_quantile(aes(color = "q =  .9"), size = 8, q = .9)
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ## `geom_highlight()`
 
@@ -474,7 +521,11 @@ gapminder::gapminder %>%
       highlight_condition = 
         country == "Bolivia") + 
   geom_highlight(linewidth = 3)
-#> Error in gapminder::gapminder %>% filter(continent == "Americas") %>% : could not find function "%>%"
+```
+
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
 
 gapminder::gapminder %>% 
   filter(year == 2002) %>% 
@@ -484,9 +535,11 @@ gapminder::gapminder %>%
       highlight_condition = 
         continent == "Europe") + 
   geom_highlight(geom = "point") + 
-  scale_x_log10()
-#> Error in gapminder::gapminder %>% filter(year == 2002) %>% ggplot(): could not find function "%>%"
+  scale_x_log10() + 
+  scale_color_manual(values = c("grey", "darkolivegreen"))
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 # One-liners\!?\!?
 
@@ -523,15 +576,27 @@ last_plot() +
 ggplot(cars) +
   aes(speed, dist) + 
   geom_point() + 
-  geom_xmean_line(data = . %>% filter(speed < 10))
+  geom_xmean_line(linetype = 'dashed', 
+                  data = . %>% tail,
+                  aes(color = dist > 50))
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
 
+``` r
+
+ggplot(cars) +
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_xmean_line(data = . %>% filter(speed < 10))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
+
 ## `geom_xmean` in 99 characters
 
 ``` r
-geom_xmean <- function(...){stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
+geom_xmean <- function(...){stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), "point", ...)}
 
 ggplot(cars) +
   aes(speed, dist) + 
@@ -568,7 +633,7 @@ ggplot(data = .) +
 
 ``` r
 
-geom_expectedvalue <- function(...){stat_group(function(df) df |> summarise(x = sum(x*y), y = 0), ...)} # point is defaut geom
+geom_expectedvalue <- function(...){stat_group(function(df) df |> summarise(x = sum(x*y), y = 0), "point", ...)} # point is defaut geom
 
 last_plot() + 
   geom_expectedvalue()
@@ -673,7 +738,7 @@ palmerpenguins::penguins %>%
 ``` r
 
 last_plot() +
-  geom_means(size = 5, shape = "diamond", aes(color = bill_depth_mm > 17))  # why does aes work here w/o mapping =
+  geom_means(size = 8, shape = "diamond", aes(color = bill_depth_mm > 17))  # why does aes work here w/o mapping =
 #> Warning: Removed 2 rows containing missing values or values outside the scale range
 #> (`geom_point()`).
 #> Warning: Removed 1 row containing missing values or values outside the scale range
@@ -681,6 +746,23 @@ last_plot() +
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
+
+``` r
+
+
+last_plot() +
+  geom_means(size = 8, 
+             shape = "square", 
+             data = . %>% filter(species == "Chinstrap"),
+             aes(color = bill_depth_mm > 17),
+             alpha = .6) 
+#> Warning: Removed 2 rows containing missing values or values outside the scale range
+#> (`geom_point()`).
+#> Removed 1 row containing missing values or values outside the scale range
+#> (`geom_point()`).
+```
+
+![](README_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->
 
 ## `geom_grouplabel_at_means()`
 
@@ -715,11 +797,14 @@ geo_reference_northcarolina_county <- nc |>
   dplyr::select(county_name = NAME, fips = FIPS) |>
   sf2stat:::sf_df_prep_for_stat(id_col_name = "county_name")
 
-# failing with default aes... :-(
 
-stat_nc_counties <- function(...){
+stat_nc_counties <- function(geom = "sf", ...){
   
-  stat_panel_sf(geo_ref_data = geo_reference_northcarolina_county, default_aes = ggplot2::aes(label = after_stat(id_col)), ...)
+  stat_panel_sf(geo_ref_data = geo_reference_northcarolina_county, 
+                fun = NULL, 
+                geom = geom, 
+                default_aes = ggplot2::aes(label = after_stat(id_col)),
+                ...)
   
 }
 
@@ -740,8 +825,9 @@ nc %>%
 ggplot() + 
   aes(fips = FIPS) +
   stat_nc_counties() + 
-  stat_nc_counties(geom = "text",
-                   mapping = aes(label = SID74)) # why?
+  stat_nc_counties(geom = "text", 
+                   data = . %>% head(),
+                   aes(label = SID74)) 
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
@@ -924,6 +1010,7 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-10-1.png
 #> │       ├── unnamed-chunk-10-2.png
 #> │       ├── unnamed-chunk-11-1.png
+#> │       ├── unnamed-chunk-11-2.png
 #> │       ├── unnamed-chunk-12-1.png
 #> │       ├── unnamed-chunk-12-2.png
 #> │       ├── unnamed-chunk-12-3.png
@@ -933,6 +1020,7 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-14-1.png
 #> │       ├── unnamed-chunk-14-2.png
 #> │       ├── unnamed-chunk-14-3.png
+#> │       ├── unnamed-chunk-14-4.png
 #> │       ├── unnamed-chunk-15-1.png
 #> │       ├── unnamed-chunk-15-2.png
 #> │       ├── unnamed-chunk-15-3.png
@@ -941,6 +1029,7 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-16-3.png
 #> │       ├── unnamed-chunk-17-1.png
 #> │       ├── unnamed-chunk-17-2.png
+#> │       ├── unnamed-chunk-17-3.png
 #> │       ├── unnamed-chunk-18-1.png
 #> │       ├── unnamed-chunk-19-1.png
 #> │       ├── unnamed-chunk-19-2.png
@@ -952,7 +1041,9 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-8-1.png
 #> │       ├── unnamed-chunk-8-2.png
 #> │       ├── unnamed-chunk-8-3.png
-#> │       └── unnamed-chunk-9-1.png
+#> │       ├── unnamed-chunk-9-1.png
+#> │       ├── unnamed-chunk-9-2.png
+#> │       └── unnamed-chunk-9-3.png
 #> ├── man
 #> └── statexpress.Rproj
 ```

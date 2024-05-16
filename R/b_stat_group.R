@@ -1,9 +1,3 @@
-StatRasagroup <- ggplot2::ggproto(
-  `_class` = "StatRasagroup", 
-  `_inherit` = ggplot2::Stat,
-  compute_group = compute_rasa
-  )
-
 # stat function used in ggplot - but reordered from conventional!
 stat_group <- function(fun = NULL,
                        geom = "point", 
@@ -16,8 +10,15 @@ stat_group <- function(fun = NULL,
                       ...,
                       show.legend = NA,
                       inherit.aes = TRUE) {
+  
+   StatRasagroup <- ggplot2::ggproto(
+   `_class` = "StatRasagroup", 
+   `_inherit` = ggplot2::Stat,
+   compute_group = compute_rasa
+   )
+  
    # Check arguments 
-   if (!is.function(fun)) stop("compute_group_fun must be a function")
+   if (!is.function(fun)) stop("fun must be a function")
    
    # Pass dotted arguments to a list
    fun.args <- match.call(expand.dots = FALSE)$`...`

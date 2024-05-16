@@ -1,7 +1,4 @@
-StatRasapanel <- 
-  ggplot2::ggproto("StatRasapanel", 
-                   ggplot2::Stat,
-                   compute_panel = compute_rasa)
+
 
 
 # stat function used in ggplot - we reorder from conventional
@@ -15,6 +12,12 @@ stat_panel <- function(fun = NULL,
                       ...,
                       show.legend = NA,
                       inherit.aes = TRUE) {
+
+   StatRasapanel <- 
+   ggplot2::ggproto("StatRasapanel", 
+                   ggplot2::Stat,
+                   compute_panel = compute_rasa)
+  
    # Check arguments 
    if (!is.function(fun)) stop ("fun must be a function")
    
