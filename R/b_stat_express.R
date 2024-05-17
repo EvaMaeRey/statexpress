@@ -1,4 +1,5 @@
-# stat function used in ggplot - but reordered from conventional!
+# stat function used in ggplot - right now putting fun and geom first
+# with eye to positional argumenting
 stat_express <- function(fun = NULL,
                        geom = "point", 
                        mapping = NULL, 
@@ -13,16 +14,16 @@ stat_express <- function(fun = NULL,
                       computation_scope = "group"
                   ) {
   
-   StatTemp <- ggplot2::ggproto(
-   `_class` = "StatTemp", 
-   `_inherit` = ggplot2::Stat,
-   )
-  
    # Check arguments 
    if (!is.function(fun)) stop("fun must be a function")
    
    # Pass dotted arguments to a list
    fun.args <- match.call(expand.dots = FALSE)$`...`
+  
+   StatTemp <- ggplot2::ggproto(
+   `_class` = "StatTemp", 
+   `_inherit` = ggplot2::Stat,
+   )
    
    if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
    if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
@@ -31,7 +32,6 @@ stat_express <- function(fun = NULL,
    if(computation_scope == "group"){StatTemp$compute_group <- compute_rasa}
    if(computation_scope == "panel"){StatTemp$compute_panel <- compute_rasa}
 
-   
    ggplot2::layer(
       data = data,
       mapping = mapping,
@@ -50,6 +50,3 @@ stat_express <- function(fun = NULL,
       )
    )
 }
-
-
-stat_group <- stat_express

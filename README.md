@@ -1,9 +1,10 @@
 
   - [`compute_rasa()`](#compute_rasa)
-  - [then define StatRasagroup and
-    stat\_group()](#then-define-statrasagroup-and-stat_group)
-  - [define StatRasapanel and
-    stat\_panel](#define-statrasapanel-and-stat_panel)
+  - [then define user-facing `stat_express()`, with StatTemp defined
+    *within* the function
+    call.](#then-define-user-facing-stat_express-with-stattemp-defined-within-the-function-call)
+  - [define `stat_group()` and
+    `stat_panel()`](#define-stat_group-and-stat_panel)
   - [define stat\_panel\_sf](#define-stat_panel_sf)
   - [Examples](#examples)
       - [geom\_means](#geom_means)
@@ -12,13 +13,13 @@
       - [geom\_xmean](#geom_xmean)
       - [geom\_quantile](#geom_quantile)
       - [`geom_highlight()`](#geom_highlight)
-  - [One-liners\!?\!?](#one-liners)
+  - [One-liners?](#one-liners)
       - [`geom_xmean_line()` in 137
         characters](#geom_xmean_line-in-137-characters)
       - [`geom_xmean` in 99 characters](#geom_xmean-in-99-characters)
-      - [`geom_post()` in 101 characters, `geom_expectedvalue()` in 113,
+      - [`geom_post()` in 101 characters, `stat_expectedvalue()` in 113,
         `geom_expectedvalue_label()`
-        171…](#geom_post-in-101-characters-geom_expectedvalue-in-113-geom_expectedvalue_label-171)
+        171…](#geom_post-in-101-characters-stat_expectedvalue-in-113-geom_expectedvalue_label-171)
       - [`geom_means` in 131 characters](#geom_means-in-131-characters)
       - [`geom_grouplabel_at_means()`](#geom_grouplabel_at_means)
   - [Then using stat\_panel\_sf w/ helper package
@@ -46,16 +47,40 @@
 devtools::create(".")
 ```
 
+‘It may seem surprising, but creating new stats is one of the most
+useful ways to extend the capabilities of ggplot2.’ – ggplot2: Elegant
+Graphics for Data Analysis
+
+Current methods for defining new user-facing stat and geom functions may
+be considered prohibitive for in-script, on-the-fly-use. What if there
+weren’t so much boiler plate? statexpress (or whatever this ends up
+being called) attempts to make concise definition possible - almost as
+concise as the pre-processing of data that you might have to do in
+absence of the proposed functionality. Then, extending ggplot2’s
+capabilities by creating new stats could happen not only as development
+activity, but also in data-analytic contexts.
+
+A few approaches have been combine here.
+
+1.  compute\_rasa (define a generic function which will hold another
+    specific, user defined function. The user defined function’s
+    arguments are passed to the generic function in a generic way (and
+    later to user-facing stat\_express layer() in params.))
+2.  ggtemp (define a temp Stat *within* a user facing stat\_express()
+    function; Stat slots (default\_aes, etc…) are made available to user
+    as function arguments)
+
+Let’s go\!
+
 # `compute_rasa()`
 
-See Campitelli 2018 which creates statRasa and stat\_rasa.
+See Campitelli 2018 which creates statRasa and stat\_rasa, and
 
 <https://eliocamp.github.io/codigo-r/en/2018/05/how-to-make-a-generic-stat-in-ggplot2/>
 
-We pull his function internal to StatRasa that defines compute\_group.
-We can use in a few different places – now to define StatGroup and
-StatPanel as well as their user-facing stat\_group() and stat\_panel()
-and stat\_panel\_sf.
+We pull his function internal to StatRasa that defines compute\_rasa. We
+can use in a few different places – now to define user-facing
+stat\_group() and stat\_panel() and stat\_panel\_sf().
 
 ``` r
 knitrExtra:::chunk_to_r("a_compute_rasa")
@@ -79,16 +104,17 @@ compute_rasa <- function(data, scales, fun, fun.args) {
 }
 ```
 
-# then define StatRasagroup and stat\_group()
+# then define user-facing `stat_express()`, with StatTemp defined *within* the function call.
 
 ``` r
-knitrExtra:::chunk_to_r("b_stat_group")
+knitrExtra:::chunk_to_r("b_stat_express")
 #> It seems you are currently knitting a Rmd/Qmd file. The parsing of the file will be done in a new R session.
 ```
 
 ``` r
-# stat function used in ggplot - but reordered from conventional!
-stat_group <- function(fun = NULL,
+# stat function used in ggplot - right now putting fun and geom first
+# with eye to positional argumenting
+stat_express <- function(fun = NULL,
                        geom = "point", 
                        mapping = NULL, 
                        data = NULL,
@@ -98,28 +124,32 @@ stat_group <- function(fun = NULL,
                        dropped_aes = NULL,
                       ...,
                       show.legend = NA,
-                      inherit.aes = TRUE) {
-  
-   StatRasagroup <- ggplot2::ggproto(
-   `_class` = "StatRasagroup", 
-   `_inherit` = ggplot2::Stat,
-   compute_group = compute_rasa
-   )
+                      inherit.aes = TRUE,
+                      computation_scope = "group"
+                  ) {
   
    # Check arguments 
    if (!is.function(fun)) stop("fun must be a function")
    
    # Pass dotted arguments to a list
    fun.args <- match.call(expand.dots = FALSE)$`...`
+  
+   StatTemp <- ggplot2::ggproto(
+   `_class` = "StatTemp", 
+   `_inherit` = ggplot2::Stat,
+   )
    
-   if(!is.null(required_aes)){StatRasagroup$required_aes <- required_aes}
-   if(!is.null(default_aes)){StatRasagroup$default_aes <- default_aes}
-   if(!is.null(dropped_aes)){StatRasagroup$dropped_aes <- dropped_aes}
+   if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+   if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+   if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
    
+   if(computation_scope == "group"){StatTemp$compute_group <- compute_rasa}
+   if(computation_scope == "panel"){StatTemp$compute_panel <- compute_rasa}
+
    ggplot2::layer(
       data = data,
       mapping = mapping,
-      stat = StatRasagroup,
+      stat = StatTemp,
       geom = geom,
       position = position,
       show.legend = show.legend,
@@ -138,62 +168,64 @@ stat_group <- function(fun = NULL,
 
 -----
 
-# define StatRasapanel and stat\_panel
+# define `stat_group()` and `stat_panel()`
 
 ``` r
-knitrExtra:::chunk_to_r("c_stat_panel")
+knitrExtra:::chunk_to_r("c_stat_group_panel")
 #> It seems you are currently knitting a Rmd/Qmd file. The parsing of the file will be done in a new R session.
+#> Error in chunk_info[, "code"][[1]][[1]]: subscript out of bounds
 ```
 
+I think unified approach works fine, but commenting out predecessor.
+
 ``` r
-
-
-
+stat_group <- stat_express
+stat_panel <- function(...){stat_express(computation_scope = "panel", ...)}
 # stat function used in ggplot - we reorder from conventional
-stat_panel <- function(fun = NULL, 
-                       geom = "point", 
-                       mapping = NULL, data = NULL,
-                      position = "identity",
-                      required_aes = NULL,
-                      default_aes = NULL,
-                      dropped_aes = NULL,
-                      ...,
-                      show.legend = NA,
-                      inherit.aes = TRUE) {
-
-   StatRasapanel <- 
-   ggplot2::ggproto("StatRasapanel", 
-                   ggplot2::Stat,
-                   compute_panel = compute_rasa)
-  
-   # Check arguments 
-   if (!is.function(fun)) stop ("fun must be a function")
-   
-   # Pass dotted arguments to a list
-   fun.args <- match.call(expand.dots = FALSE)$`...`
-   
-   if(!is.null(required_aes)){StatRasapanel$required_aes <- required_aes}
-   if(!is.null(default_aes)){StatRasapanel$default_aes <- default_aes}
-   if(!is.null(dropped_aes)){StatRasapanel$dropped_aes <- dropped_aes}
-
-   ggplot2::layer(
-      data = data,
-      mapping = mapping,
-      stat = StatRasapanel,
-      geom = geom,
-      position = position,
-      show.legend = show.legend,
-      inherit.aes = inherit.aes,
-      check.aes = FALSE,
-      check.param = FALSE,
-      params = list(
-         fun = fun, 
-         fun.args = fun.args,
-         na.rm = FALSE,
-         ...
-      )
-   )
-}
+# stat_panel <- function(fun = NULL, 
+#                        geom = "point", 
+#                        mapping = NULL, data = NULL,
+#                       position = "identity",
+#                       required_aes = NULL,
+#                       default_aes = NULL,
+#                       dropped_aes = NULL,
+#                       ...,
+#                       show.legend = NA,
+#                       inherit.aes = TRUE) {
+# 
+#    StatTemp <- 
+#    ggplot2::ggproto("StatTemp", 
+#                    ggplot2::Stat,
+#                    compute_panel = compute_rasa)
+#   
+#    # Check arguments 
+#    if (!is.function(fun)) stop ("fun must be a function")
+#    
+#    # Pass dotted arguments to a list
+#    fun.args <- match.call(expand.dots = FALSE)$`...`
+#    
+#    if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+#    if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+#    if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
+# 
+#    ggplot2::layer(
+#       data = data,
+#       mapping = mapping,
+#       stat = StatTemp,
+#       geom = geom,
+#       position = position,
+#       show.legend = show.legend,
+#       inherit.aes = inherit.aes,
+#       check.aes = FALSE,
+#       check.param = FALSE,
+#       params = list(
+#          fun = fun, 
+#          fun.args = fun.args,
+#          na.rm = FALSE,
+#          ...
+#       )
+#    )
+# }
 ```
 
 -----
@@ -203,14 +235,13 @@ stat_panel <- function(fun = NULL,
 ``` r
 knitrExtra:::chunk_to_r("d_stat_panel_sf")
 #> It seems you are currently knitting a Rmd/Qmd file. The parsing of the file will be done in a new R session.
-#> Error in chunk_info[, "code"][[1]][[1]]: subscript out of bounds
 ```
 
-`stat_panel_sf()` will use StatRasaPanel, but with layer\_sf under the
-hood instead of layer. You should be able to declare crs (not convinced
-we’ve got that working. ) Additionally, the ‘fun’ for the panel will
-populate automatically if a geom\_ref\_argument is provided and the fun
-argument is not provided.
+`stat_panel_sf()` will use StatTemp and compute\_rasa, but with
+layer\_sf under the hood instead of layer. You should be able to declare
+crs (not convinced we’ve got that working. ) Additionally, the ‘fun’ for
+the panel will populate automatically if a geom\_ref\_argument is
+provided and the fun argument is not provided.
 
 ``` r
 # stat function used in ggplot - we reorder from conventional
@@ -230,8 +261,8 @@ stat_panel_sf <- function(geo_ref_data = NULL,
                       crs = "NAD27" # "NAD27", 5070, "WGS84", "NAD83", 4326 , 3857
 ) {
   
-  StatRasapanel <- 
-   ggplot2::ggproto("StatRasapanel", 
+  StatTemp <- 
+   ggplot2::ggproto("StatTemp", 
                    ggplot2::Stat,
                    compute_panel = compute_rasa)
   
@@ -262,14 +293,14 @@ stat_panel_sf <- function(geo_ref_data = NULL,
    # Pass dotted arguments to a list
    fun.args <- match.call(expand.dots = FALSE)$`...`
    
-   if(!is.null(required_aes)){StatRasapanel$required_aes <- required_aes}
-   if(!is.null(default_aes)){StatRasapanel$default_aes <- default_aes}
-   if(!is.null(dropped_aes)){StatRasapanel$dropped_aes <- dropped_aes}
+   if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+   if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+   if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
    
      c(ggplot2::layer_sf(
               data = data,
               mapping = mapping,
-              stat = StatRasapanel,  # proto object from step 2
+              stat = StatTemp,  # proto object from step 2
               geom = geom,  # inherit other behavior
               position = position,
               show.legend = show.legend,
@@ -317,7 +348,7 @@ mtcars |>
   geom_means(size = 6)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 
@@ -325,7 +356,7 @@ last_plot() +
   aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 ## geom\_center\_label
 
@@ -355,7 +386,7 @@ palmerpenguins::penguins |>
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 
@@ -366,7 +397,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 
@@ -392,7 +423,7 @@ palmerpenguins::penguins |>
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
 ``` r
 
@@ -432,7 +463,7 @@ data.frame(outcome = 0:1, prob = c(.4, .6)) |>
   labs(title = "probability by outcome")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ## geom\_xmean
 
@@ -457,7 +488,7 @@ mtcars |>
   geom_xmean(linetype = "dashed")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 
@@ -465,7 +496,7 @@ last_plot() +
   aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 ## geom\_quantile
 
@@ -492,7 +523,7 @@ mtcars |>
   geom_quantile(aes(color = "q =  .9"), size = 8, q = .9)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ## `geom_highlight()`
 
@@ -505,7 +536,7 @@ data %>%
   
 }
 
-geom_highlight <- function(geom = "line", ...){
+stat_highlight <- function(geom = "line", ...){
   
   stat_panel(fun = compute_panel_highlight, 
              geom = geom, 
@@ -521,11 +552,7 @@ gapminder::gapminder %>%
       highlight_condition = 
         country == "Bolivia") + 
   geom_highlight(linewidth = 3)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-
-``` r
+#> Error in geom_highlight(linewidth = 3): could not find function "geom_highlight"
 
 gapminder::gapminder %>% 
   filter(year == 2002) %>% 
@@ -537,14 +564,13 @@ gapminder::gapminder %>%
   geom_highlight(geom = "point") + 
   scale_x_log10() + 
   scale_color_manual(values = c("grey", "darkolivegreen"))
+#> Error in geom_highlight(geom = "point"): could not find function "geom_highlight"
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
-
-# One-liners\!?\!?
+# One-liners?
 
 Since were organize with variable function input in first position and
-geom in secton position, and we can do one-liners (or two) use
+geom in section position, and we can do one-liners (or two) use
 positioning for arguments.
 
 ## `geom_xmean_line()` in 137 characters
@@ -561,7 +587,7 @@ ggplot(cars) +
   geom_xmean_line(linetype = 'dashed')
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
   
@@ -569,7 +595,7 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 ``` r
 
@@ -581,7 +607,7 @@ ggplot(cars) +
                   aes(color = dist > 50))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
 
 ``` r
 
@@ -591,7 +617,7 @@ ggplot(cars) +
   geom_xmean_line(data = . %>% filter(speed < 10))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-4.png)<!-- -->
 
 ## `geom_xmean` in 99 characters
 
@@ -604,7 +630,7 @@ ggplot(cars) +
   geom_xmean(size = 8, shape = "diamond") 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 
@@ -612,11 +638,11 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
 
-## `geom_post()` in 101 characters, `geom_expectedvalue()` in 113, `geom_expectedvalue_label()` 171…
+## `geom_post()` in 101 characters, `stat_expectedvalue()` in 113, `geom_expectedvalue_label()` 171…
 
-May I buy a visualy enhanced probability lesson for 400 characters? Yes
+May I buy a visually enhanced probability lesson for 400 characters? Yes
 please.
 
 ``` r
@@ -633,20 +659,27 @@ ggplot(data = .) +
 
 ``` r
 
-geom_expectedvalue <- function(...){stat_group(function(df) df |> summarise(x = sum(x*y), y = 0), "point", ...)} # point is defaut geom
+stat_expectedvalue <- function(geom = "point", ...){
+  
+  stat_group(function(df) df |> summarise(x = sum(x*y), y = 0), 
+             geom = geom, 
+             default_aes = aes(label = after_stat(round(x, 2))), 
+             ...)
+  
+  } # point is default geom
 
 last_plot() + 
-  geom_expectedvalue()
+  stat_expectedvalue()
 ```
 
 ![](README_files/figure-gfm/cars-2.png)<!-- -->
 
 ``` r
 
-geom_expectedvalue_label <- function(...){stat_group(function(df) df |> summarise(x = sum(x*y), y = 0) |> mutate(label = round(x, 2)), "text", hjust = 1, vjust = 0, ...)}
-
 last_plot() +
-  geom_expectedvalue_label()
+  stat_expectedvalue(geom = "text", vjust = 0) + 
+  stat_expectedvalue(geom = "text", label = "The Expected Value",
+                     vjust = 1)
 ```
 
 ![](README_files/figure-gfm/cars-3.png)<!-- -->
@@ -664,7 +697,7 @@ rep(1, 15) |>
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 
@@ -676,7 +709,7 @@ last_plot() +
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
 
 ``` r
 
@@ -688,7 +721,7 @@ last_plot() +
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
 
 ``` r
 
@@ -733,7 +766,7 @@ palmerpenguins::penguins %>%
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 
@@ -745,7 +778,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
 
 ``` r
 
@@ -762,7 +795,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->
 
 ## `geom_grouplabel_at_means()`
 
@@ -778,32 +811,38 @@ palmerpenguins::penguins %>%
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 # Then using stat\_panel\_sf w/ helper package sf2stat
 
 ``` r
 nc <- sf::st_read(system.file("shape/nc.shp", package="sf"))
-#> Reading layer `nc' from data source 
-#>   `/Library/Frameworks/R.framework/Versions/4.4-x86_64/Resources/library/sf/shape/nc.shp' 
-#>   using driver `ESRI Shapefile'
-#> Simple feature collection with 100 features and 14 fields
-#> Geometry type: MULTIPOLYGON
-#> Dimension:     XY
-#> Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
-#> Geodetic CRS:  NAD27
+```
 
-geo_reference_northcarolina_county <- nc |>
+``` r
+geo_reference_nc <- nc |>
   dplyr::select(county_name = NAME, fips = FIPS) |>
   sf2stat:::sf_df_prep_for_stat(id_col_name = "county_name")
+#> Warning in st_point_on_surface.sfc(sf::st_zm(dplyr::pull(sf_df, geometry))):
+#> st_point_on_surface may not give correct results for longitude/latitude data
+#> Warning: The `x` argument of `as_tibble.matrix()` must have unique column names if
+#> `.name_repair` is omitted as of tibble 2.0.0.
+#> ℹ Using compatibility `.name_repair`.
+#> ℹ The deprecated feature was likely used in the sf2stat package.
+#>   Please report the issue to the authors.
+#> This warning is displayed once every 8 hours.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
 
 
 stat_nc_counties <- function(geom = "sf", ...){
   
-  stat_panel_sf(geo_ref_data = geo_reference_northcarolina_county, 
+  stat_panel_sf(geo_ref_data = geo_reference_nc, 
                 fun = NULL, 
                 geom = geom, 
-                default_aes = ggplot2::aes(label = after_stat(id_col)),
+                default_aes = 
+                  ggplot2::aes(label = 
+                                 after_stat(id_col)),
                 ...)
   
 }
@@ -813,7 +852,9 @@ nc %>%
 ggplot() + 
   aes(fips = FIPS) +
   stat_nc_counties() + 
-  stat_nc_counties(geom = "text")
+  stat_nc_counties(geom = "text", check_overlap = T)
+#> Joining with `by = join_by(fips)`
+#> Joining with `by = join_by(fips)`
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
@@ -823,11 +864,14 @@ ggplot() +
 nc %>% 
   sf::st_drop_geometry() %>% 
 ggplot() + 
-  aes(fips = FIPS) +
+  aes(fips = FIPS, fill = SID74) +
   stat_nc_counties() + 
   stat_nc_counties(geom = "text", 
                    data = . %>% head(),
-                   aes(label = SID74)) 
+                   aes(label = SID74),
+                   color = "grey85") 
+#> Joining with `by = join_by(fips)`
+#> Joining with `by = join_by(fips)`
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
@@ -998,8 +1042,10 @@ fs::dir_tree(recurse = T)
 #> ├── NAMESPACE
 #> ├── R
 #> │   ├── a_compute_rasa.R
+#> │   ├── b_stat_express.R
 #> │   ├── b_stat_group.R
-#> │   └── c_stat_panel.R
+#> │   ├── c_stat_panel.R
+#> │   └── d_stat_panel_sf.R
 #> ├── README.Rmd
 #> ├── README.md
 #> ├── README_files
@@ -1017,6 +1063,7 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-13-1.png
 #> │       ├── unnamed-chunk-13-2.png
 #> │       ├── unnamed-chunk-13-3.png
+#> │       ├── unnamed-chunk-13-4.png
 #> │       ├── unnamed-chunk-14-1.png
 #> │       ├── unnamed-chunk-14-2.png
 #> │       ├── unnamed-chunk-14-3.png
@@ -1031,8 +1078,12 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-17-2.png
 #> │       ├── unnamed-chunk-17-3.png
 #> │       ├── unnamed-chunk-18-1.png
+#> │       ├── unnamed-chunk-18-2.png
 #> │       ├── unnamed-chunk-19-1.png
 #> │       ├── unnamed-chunk-19-2.png
+#> │       ├── unnamed-chunk-21-1.png
+#> │       ├── unnamed-chunk-21-2.png
+#> │       ├── unnamed-chunk-21-3.png
 #> │       ├── unnamed-chunk-22-1.png
 #> │       ├── unnamed-chunk-22-2.png
 #> │       ├── unnamed-chunk-22-3.png
