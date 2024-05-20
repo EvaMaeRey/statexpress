@@ -1,5 +1,5 @@
 # stat function used in ggplot - right now putting fun and geom first
-# with eye to positional argumenting
+# with eye to positional augmenting
 stat_express <- function(fun = NULL,
                        geom = "point", 
                        mapping = NULL, 

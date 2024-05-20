@@ -28,37 +28,23 @@
     ✅](#part-ii-packaging-and-documentation--)
       - [Phase 1. Minimal working
         package](#phase-1-minimal-working-package)
-  - [Bit 8: Compile readme](#bit-8-compile-readme)
-  - [Bit 9: Push to github](#bit-9-push-to-github)
-  - [Bit 10: listen and iterate](#bit-10-listen-and-iterate)
-      - [Phase 3: Settling and testing 🚧
-        ✅](#phase-3-settling-and-testing--)
-      - [Phase 4. Promote to wider audience… 🚧
-        ✅](#phase-4-promote-to-wider-audience--)
-      - [Phase 5: Harden/commit: Submit to CRAN/RUniverse 🚧
-        ✅](#phase-5-hardencommit-submit-to-cranruniverse--)
-  - [Appendix: Reports, Environment](#appendix-reports-environment)
-      - [Description file complete? 🚧 ✅](#description-file-complete--)
-      - [Environment 🚧 ✅](#environment--)
-      - [`devtools::check()` report](#devtoolscheck-report)
-      - [Package directory file tree](#package-directory-file-tree)
 
 ``` r
 devtools::create(".")
 ```
 
-‘It may seem surprising, but creating new stats is one of the most
-useful ways to extend the capabilities of ggplot2.’ – ggplot2: Elegant
-Graphics for Data Analysis
+> … creating new stats is one of the most useful ways to extend the
+> capabilities of ggplot2.’ – ggplot2: Elegant Graphics for Data
+> Analysis
 
 Current methods for defining new user-facing stat and geom functions may
-be considered prohibitive for in-script, on-the-fly-use. What if there
-weren’t so much boiler plate? statexpress (or whatever this ends up
-being called) attempts to make concise definition possible - almost as
-concise as the pre-processing of data that you might have to do in
-absence of the proposed functionality. Then, extending ggplot2’s
-capabilities by creating new stats could happen not only as development
-activity, but also in data-analytic contexts.
+be considered prohibitive for in-script, on-the-fly-use. statexpress
+attempts to make concise definition possible - almost as concise as the
+pre-processing of data that you might have to do *in absence* of the
+proposed statexpress functionality. With statexpress, extending
+ggplot2’s capabilities by creating under-the-hood statisical
+transformation routines could happen *not only* as development activity,
+but also in data-analytic contexts.
 
 A few approaches have been combine here.
 
@@ -113,7 +99,7 @@ knitrExtra:::chunk_to_r("b_stat_express")
 
 ``` r
 # stat function used in ggplot - right now putting fun and geom first
-# with eye to positional argumenting
+# with eye to positional augmenting
 stat_express <- function(fun = NULL,
                        geom = "point", 
                        mapping = NULL, 
@@ -173,13 +159,31 @@ stat_express <- function(fun = NULL,
 ``` r
 knitrExtra:::chunk_to_r("c_stat_group_panel")
 #> It seems you are currently knitting a Rmd/Qmd file. The parsing of the file will be done in a new R session.
-#> Error in chunk_info[, "code"][[1]][[1]]: subscript out of bounds
 ```
 
 I think unified approach works fine, but commenting out predecessor.
 
 ``` r
-stat_group <- stat_express
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+stat_group <- function(...){stat_express(...)}
+
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 stat_panel <- function(...){stat_express(computation_scope = "panel", ...)}
 # stat function used in ggplot - we reorder from conventional
 # stat_panel <- function(fun = NULL, 
@@ -916,9 +920,12 @@ things are are really finalized, then go without colons (and rearrange
 your readme…)
 
 ``` r
+rm(list = ls())
 library(statexpress)
+library(ggplot2)
+library(tidyverse)
 
-geom_xmean <- function(...){statexpress:::stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
+geom_xmean <- function(...){stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
 
 ggplot(cars) +
   aes(speed, dist) + 
@@ -945,97 +952,8 @@ last_plot() +
 
 ![](README_files/figure-gfm/unnamed-chunk-22-3.png)<!-- -->
 
-# Bit 8: Compile readme
-
-# Bit 9: Push to github
-
-# Bit 10: listen and iterate
-
-## Phase 3: Settling and testing 🚧 ✅
-
-### Bit A. Added a description and author information in the [DESCRIPTION file](https://r-pkgs.org/description.html) 🚧 ✅
-
-### Bit B. Added [roxygen skeleton](https://r-pkgs.org/man.html) for exported functions. 🚧 ✅
-
-### Bit D. Settle on [examples](https://r-pkgs.org/man.html#sec-man-examples). Put them in the roxygen skeleton and readme. 🚧 ✅
-
-### Bit C. Chosen a [license](https://r-pkgs.org/license.html)? 🚧 ✅
-
 ``` r
-usethis::use_mit_license()
-```
-
-### Bit D. Use life-cycle badge
-
-``` r
-usethis::use_lifecycle_badge("experimental") 
-```
-
-### Bit E. Written formal [tests](https://r-pkgs.org/testing-basics.html) of functions and save to test that folders 🚧 ✅
-
-That would look like this…
-
-``` r
-library(testthat)
-
-test_that("calc times 2 works", {
-  expect_equal(times_two(4), 8)
-  expect_equal(times_two(5), 10)
-  
-})
-```
-
-``` r
-knitrExtra::chunk_to_tests_testthat("test_calc_times_two_works")
-```
-
-### Bit F. Check again. Addressed notes, warnings and errors. 🚧 ✅
-
-``` r
-devtools::check(pkg = ".")
-```
-
-## Phase 4. Promote to wider audience… 🚧 ✅
-
-### Bit A. Package website built? 🚧 ✅
-
-### Bit B. Package website deployed? 🚧 ✅
-
-## Phase 5: Harden/commit: Submit to CRAN/RUniverse 🚧 ✅
-
-# Appendix: Reports, Environment
-
-## Description file complete? 🚧 ✅
-
-``` r
-readLines("DESCRIPTION")
-```
-
-## Environment 🚧 ✅
-
-Here I just want to print the packages and the versions
-
-``` r
-all <- sessionInfo() |> print() |> capture.output()
-all[11:17]
-#> [1] ""                                                                         
-#> [2] "time zone: America/Denver"                                                
-#> [3] "tzcode source: internal"                                                  
-#> [4] ""                                                                         
-#> [5] "attached base packages:"                                                  
-#> [6] "[1] stats     graphics  grDevices utils     datasets  methods   base     "
-#> [7] ""
-```
-
-## `devtools::check()` report
-
-``` r
-devtools::check(pkg = ".")
-```
-
-## Package directory file tree
-
-``` r
+# for quick knit (exiting early) change eval to TRUE
 fs::dir_tree(recurse = T)
 #> .
 #> ├── DESCRIPTION
@@ -1044,6 +962,7 @@ fs::dir_tree(recurse = T)
 #> │   ├── a_compute_rasa.R
 #> │   ├── b_stat_express.R
 #> │   ├── b_stat_group.R
+#> │   ├── c_stat_group_panel.R
 #> │   ├── c_stat_panel.R
 #> │   └── d_stat_panel_sf.R
 #> ├── README.Rmd
@@ -1096,5 +1015,8 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-9-2.png
 #> │       └── unnamed-chunk-9-3.png
 #> ├── man
+#> │   ├── stat_group.Rd
+#> │   └── stat_panel.Rd
 #> └── statexpress.Rproj
+knitr::knit_exit()
 ```

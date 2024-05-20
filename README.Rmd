@@ -29,9 +29,9 @@ options(tidyverse.quiet = TRUE)
 devtools::create(".")
 ```
 
-'It may seem surprising, but creating new stats is one of the most useful ways to extend the capabilities of ggplot2.' -- ggplot2: Elegant Graphics for Data Analysis
+> ... creating new stats is one of the most useful ways to extend the capabilities of ggplot2.' -- ggplot2: Elegant Graphics for Data Analysis
 
-Current methods for defining new user-facing stat and geom functions may be considered prohibitive for in-script, on-the-fly-use. What if there weren't so much boiler plate?   statexpress (or whatever this ends up being called) attempts to make concise definition possible - almost as concise as the pre-processing of data that you might have to do in absence of the proposed functionality.  Then, extending ggplot2's capabilities by creating new stats could happen not only as development activity, but also in data-analytic contexts.
+Current methods for defining new user-facing stat and geom functions may be considered prohibitive for in-script, on-the-fly-use.   statexpress attempts to make concise definition possible - almost as concise as the pre-processing of data that you might have to do *in absence* of the proposed statexpress functionality.  With statexpress, extending ggplot2's capabilities by creating under-the-hood statisical transformation routines could happen *not only* as development activity, but also in data-analytic contexts.
 
 A few approaches have been combine here. 
 
@@ -78,7 +78,7 @@ knitrExtra:::chunk_to_r("b_stat_express")
 
 ```{r b_stat_express}
 # stat function used in ggplot - right now putting fun and geom first
-# with eye to positional argumenting
+# with eye to positional augmenting
 stat_express <- function(fun = NULL,
                        geom = "point", 
                        mapping = NULL, 
@@ -143,8 +143,27 @@ knitrExtra:::chunk_to_r("c_stat_group_panel")
 
 I think unified approach works fine, but commenting out predecessor.
 
-```{r c_stat_panel}
-stat_group <- stat_express
+```{r c_stat_group_panel}
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+stat_group <- function(...){stat_express(...)}
+
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 stat_panel <- function(...){stat_express(computation_scope = "panel", ...)}
 # stat function used in ggplot - we reorder from conventional
 # stat_panel <- function(fun = NULL, 
@@ -739,9 +758,12 @@ remotes::install_github("EvaMaeRey/statExpress")
 Once functions are exported you can remove go to two colons, and when things are are really finalized, then go without colons (and rearrange your readme...)
 
 ```{r, eval = T}
+rm(list = ls())
 library(statexpress)
+library(ggplot2)
+library(tidyverse)
 
-geom_xmean <- function(...){statexpress:::stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
+geom_xmean <- function(...){stat_group(function(df) df |> summarize(x = mean(x), y = I(.05)), ...)}
 
 ggplot(cars) +
   aes(speed, dist) + 
@@ -754,6 +776,12 @@ last_plot() +
 last_plot() + 
   geom_xmean(mapping = aes(size = dist > 75))
 
+```
+
+```{r files-report-and-stop-knit, eval = T}
+# for quick knit (exiting early) change eval to TRUE
+fs::dir_tree(recurse = T)
+knitr::knit_exit()
 ```
 
 # Bit 8: Compile readme
