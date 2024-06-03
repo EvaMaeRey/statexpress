@@ -29,9 +29,16 @@ options(tidyverse.quiet = TRUE)
 devtools::create(".")
 ```
 
-> ... creating new stats is one of the most useful ways to extend the capabilities of ggplot2.' -- ggplot2: Elegant Graphics for Data Analysis
+
+
+> ... creating new stats is one of the most useful ways to extend the capabilities of ggplot2.' -- ggplot2: Elegant Graphics for Data Analysis  *Yes!*
 
 Current methods for defining new user-facing stat and geom functions may be considered prohibitive for in-script, on-the-fly-use.   statexpress attempts to make concise definition possible - almost as concise as the pre-processing of data that you might have to do *in absence* of the proposed statexpress functionality.  With statexpress, extending ggplot2's capabilities by creating under-the-hood statisical transformation routines could happen *not only* as development activity, but also in data-analytic contexts.
+
+Because creating new stats is so useful and can contribute so much to user's expressiveness w/ ggplot2 and because users are likely to intuit how Stats and Geoms work together at a high level, perhaps it's an activity that should hold a special place in the extension world - where not so much is expected of extenders as is suggested by some resources (e.g. Internals Chapter of ggplot2 which follows):
+
+> *Maybe not?*  For a ggplot2 developer who hopes to design extensions, however, ... understanding [how ggplot2 translates this plot specification into an image] is paramount.
+
 
 A few approaches have been combine here. 
 
@@ -739,7 +746,10 @@ usethis::use_package("ggplot2") # Bit 2b: document dependencies, w hypothetical 
 ```{r, eval = F}
 # Bit 4: document functions and check that package is minimally viable
 devtools::check(pkg = ".")  
+```
 
+
+```{r}
 # Bit 5: install package locally
 devtools::install(pkg = ".", upgrade = "never") 
 ```

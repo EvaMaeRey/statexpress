@@ -35,7 +35,7 @@ devtools::create(".")
 
 > … creating new stats is one of the most useful ways to extend the
 > capabilities of ggplot2.’ – ggplot2: Elegant Graphics for Data
-> Analysis
+> Analysis *Yes\!*
 
 Current methods for defining new user-facing stat and geom functions may
 be considered prohibitive for in-script, on-the-fly-use. statexpress
@@ -45,6 +45,17 @@ proposed statexpress functionality. With statexpress, extending
 ggplot2’s capabilities by creating under-the-hood statisical
 transformation routines could happen *not only* as development activity,
 but also in data-analytic contexts.
+
+Because creating new stats is so useful and can contribute so much to
+user’s expressiveness w/ ggplot2 and because users are likely to intuit
+how Stats and Geoms work together at a high level, perhaps it’s an
+activity that should hold a special place in the extension world - where
+not so much is expected of extenders as is suggested by some resources
+(e.g. Internals Chapter of ggplot2 which follows):
+
+> *Maybe not?* For a ggplot2 developer who hopes to design extensions,
+> however, … understanding \[how ggplot2 translates this plot
+> specification into an image\] is paramount.
 
 A few approaches have been combine here.
 
@@ -902,9 +913,34 @@ usethis::use_package("ggplot2") # Bit 2b: document dependencies, w hypothetical 
 ``` r
 # Bit 4: document functions and check that package is minimally viable
 devtools::check(pkg = ".")  
+```
 
+``` r
 # Bit 5: install package locally
 devtools::install(pkg = ".", upgrade = "never") 
+#> ── R CMD build ─────────────────────────────────────────────────────────────────
+#> * checking for file ‘/Users/evangelinereynolds/Google Drive/r_packages/statexpress/DESCRIPTION’ ... OK
+#> * preparing ‘statexpress’:
+#> * checking DESCRIPTION meta-information ... OK
+#> * checking for LF line-endings in source and make files and shell scripts
+#> * checking for empty or unneeded directories
+#> * building ‘statexpress_0.0.0.9000.tar.gz’
+#> 
+#> Running /Library/Frameworks/R.framework/Resources/bin/R CMD INSTALL \
+#>   /var/folders/zy/vfmj60bs3zv6r_2dsk18_vj00000gn/T//RtmpMNrKEP/statexpress_0.0.0.9000.tar.gz \
+#>   --install-tests 
+#> * installing to library ‘/Library/Frameworks/R.framework/Versions/4.4-x86_64/Resources/library’
+#> * installing *source* package ‘statexpress’ ...
+#> ** using staged installation
+#> ** R
+#> ** byte-compile and prepare package for lazy loading
+#> ** help
+#> *** installing help indices
+#> ** building package indices
+#> ** testing if installed package can be loaded from temporary location
+#> ** testing if installed package can be loaded from final location
+#> ** testing if installed package keeps a record of temporary installation path
+#> * DONE (statexpress)
 ```
 
 ### Bit 7. Write traditional README that uses built package (also serves as a test of build). 🚧 ✅
@@ -933,7 +969,7 @@ ggplot(cars) +
   geom_xmean(size = 8, shape = "diamond") 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 
@@ -941,7 +977,7 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
 
 ``` r
 
@@ -950,7 +986,7 @@ last_plot() +
 #> Warning: Using size for a discrete variable is not advised.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-3.png)<!-- -->
 
 ``` r
 # for quick knit (exiting early) change eval to TRUE
@@ -1006,6 +1042,9 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-22-1.png
 #> │       ├── unnamed-chunk-22-2.png
 #> │       ├── unnamed-chunk-22-3.png
+#> │       ├── unnamed-chunk-23-1.png
+#> │       ├── unnamed-chunk-23-2.png
+#> │       ├── unnamed-chunk-23-3.png
 #> │       ├── unnamed-chunk-7-1.png
 #> │       ├── unnamed-chunk-7-2.png
 #> │       ├── unnamed-chunk-8-1.png
