@@ -55,7 +55,11 @@ not so much is expected of extenders as is suggested by some resources
 
 > *Maybe not?* For a ggplot2 developer who hopes to design extensions,
 > however, … understanding \[how ggplot2 translates this plot
-> specification into an image\] is paramount.
+> specification into an image\] is paramount. (ggplot2 internals)
+
+> … the ease with which extensions can be made means that writing
+> one-off extensions to solve a particular plotting challenge is also
+> viable. *(More true with shortcut?)*
 
 A few approaches have been combine here.
 
@@ -927,7 +931,7 @@ devtools::install(pkg = ".", upgrade = "never")
 #> * building ‘statexpress_0.0.0.9000.tar.gz’
 #> 
 #> Running /Library/Frameworks/R.framework/Resources/bin/R CMD INSTALL \
-#>   /var/folders/zy/vfmj60bs3zv6r_2dsk18_vj00000gn/T//RtmpMNrKEP/statexpress_0.0.0.9000.tar.gz \
+#>   /var/folders/zy/vfmj60bs3zv6r_2dsk18_vj00000gn/T//RtmpIstacq/statexpress_0.0.0.9000.tar.gz \
 #>   --install-tests 
 #> * installing to library ‘/Library/Frameworks/R.framework/Versions/4.4-x86_64/Resources/library’
 #> * installing *source* package ‘statexpress’ ...
