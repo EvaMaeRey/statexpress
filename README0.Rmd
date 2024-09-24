@@ -44,52 +44,283 @@ Because creating new stats is so useful and can contribute so much to user's exp
 
 A few approaches have been combine here. 
 
-1. `qstat()`...
-2. `qlayer()`...
+1. compute_rasa (define a generic function which will hold another specific, user defined function.  The user defined function's arguments are passed to the generic function in a generic way (and later to user-facing stat_express layer() in params.)) 
+2. ggtemp (define a temp Stat *within* a user facing stat_express() function; Stat slots (default_aes, etc...) are made available to user as function arguments)
 
 Let's go!
 
-# `qstat`
+# `compute_rasa()`
 
+See Campitelli 2018 which creates statRasa and stat_rasa, and  
+
+https://eliocamp.github.io/codigo-r/en/2018/05/how-to-make-a-generic-stat-in-ggplot2/
+
+We pull his function internal to StatRasa that defines compute_rasa. We can use in a few different places --  now to define user-facing stat_group() and stat_panel() and stat_panel_sf().
 
 
 ```{r}
-knitrExtra:::chunk_to_r("a_qstat")
+knitrExtra:::chunk_to_r("a_compute_rasa")
 ```
 
-```{r a_qstat}
-qstat <- function(compute_group, ...) {
+```{r a_compute_rasa}
+compute_rasa <- function(data, scales, fun, fun.args) {
+     # Change default arguments of the function to the 
+     # values in fun.args
+     args <- formals(fun)
+     for (i in seq_along(fun.args)) {
+        if (names(fun.args[i]) %in% names(fun.args)) {
+           args[[names(fun.args[i])]] <- fun.args[[i]]
+        } 
+     }
+     formals(fun) <- args
+     
+     # Apply function to data
+     fun(data)
+}
+```
 
-  ggproto("StatTemp", Stat, compute_group = compute_group, ...)
+# then define user-facing `stat_express()`, with StatTemp defined *within* the function call.
+
+```{r}
+knitrExtra:::chunk_to_r("b_stat_express")
+```
+
+```{r b_stat_express}
+# stat function used in ggplot - right now putting fun and geom first
+# with eye to positional augmenting
+stat_express <- function(fun = NULL,
+                       geom = "point", 
+                       mapping = NULL, 
+                       data = NULL,
+                       position = "identity",
+                       required_aes = NULL, 
+                       default_aes = NULL, 
+                       dropped_aes = NULL,
+                      ...,
+                      show.legend = NA,
+                      inherit.aes = TRUE,
+                      computation_scope = "group"
+                  ) {
   
+   # Check arguments 
+   if (!is.function(fun)) stop("fun must be a function")
+   
+   # Pass dotted arguments to a list
+   fun.args <- match.call(expand.dots = FALSE)$`...`
+  
+   StatTemp <- ggplot2::ggproto(
+   `_class` = "StatTemp", 
+   `_inherit` = ggplot2::Stat,
+   )
+   
+   if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+   if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+   if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
+   
+   if(computation_scope == "group"){StatTemp$compute_group <- compute_rasa}
+   if(computation_scope == "panel"){StatTemp$compute_panel <- compute_rasa}
+
+   ggplot2::layer(
+      data = data,
+      mapping = mapping,
+      stat = StatTemp,
+      geom = geom,
+      position = position,
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      check.aes = FALSE,
+      check.param = FALSE,
+      params = list(
+         fun = fun, 
+         fun.args = fun.args,
+         na.rm = FALSE,
+         ...
+      )
+   )
 }
 ```
 
-# then define user-facing `qlayer()`, which gives the presets of geom_point and stat_identity.
+
+
+---
+
+# define `stat_group()` and `stat_panel()`
 
 ```{r}
-knitrExtra:::chunk_to_r("b_qlayer")
+knitrExtra:::chunk_to_r("c_stat_group_panel")
 ```
 
-```{r b_qlayer}
-qlayer <- function (mapping = NULL, data = NULL, stat = "identity", geom = "point", position = "identity", 
-    ..., na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) 
-{
-    layer(data = data, mapping = mapping, stat = stat, geom = geom, 
-        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
-        params = rlang::list2(na.rm = na.rm, ...))
+I think unified approach works fine, but commenting out predecessor.
+
+```{r c_stat_group_panel}
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+stat_group <- function(...){stat_express(...)}
+
+
+#' Title
+#'
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+stat_panel <- function(...){stat_express(computation_scope = "panel", ...)}
+# stat function used in ggplot - we reorder from conventional
+# stat_panel <- function(fun = NULL, 
+#                        geom = "point", 
+#                        mapping = NULL, data = NULL,
+#                       position = "identity",
+#                       required_aes = NULL,
+#                       default_aes = NULL,
+#                       dropped_aes = NULL,
+#                       ...,
+#                       show.legend = NA,
+#                       inherit.aes = TRUE) {
+# 
+#    StatTemp <- 
+#    ggplot2::ggproto("StatTemp", 
+#                    ggplot2::Stat,
+#                    compute_panel = compute_rasa)
+#   
+#    # Check arguments 
+#    if (!is.function(fun)) stop ("fun must be a function")
+#    
+#    # Pass dotted arguments to a list
+#    fun.args <- match.call(expand.dots = FALSE)$`...`
+#    
+#    if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+#    if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+#    if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
+# 
+#    ggplot2::layer(
+#       data = data,
+#       mapping = mapping,
+#       stat = StatTemp,
+#       geom = geom,
+#       position = position,
+#       show.legend = show.legend,
+#       inherit.aes = inherit.aes,
+#       check.aes = FALSE,
+#       check.param = FALSE,
+#       params = list(
+#          fun = fun, 
+#          fun.args = fun.args,
+#          na.rm = FALSE,
+#          ...
+#       )
+#    )
+# }
+
+
+
+```
+
+---
+
+# define stat_panel_sf
+
+```{r}
+knitrExtra:::chunk_to_r("d_stat_panel_sf")
+```
+
+`stat_panel_sf()` will use StatTemp and compute_rasa, but with layer_sf under the hood instead of layer. You should be able to declare crs (not convinced we've got that working. )  Additionally, the 'fun' for the panel will populate automatically if a geom_ref_argument is provided and the fun argument is not provided.
+
+```{r d_stat_panel_sf}
+# stat function used in ggplot - we reorder from conventional
+stat_panel_sf <- function(geo_ref_data = NULL,
+                          fun = NULL, 
+                       geom = "sf", 
+                       mapping = NULL, 
+                       data = NULL,
+                      position = "identity",
+                      required_aes = NULL,
+                      default_aes = NULL,
+                      dropped_aes = NULL,
+                      ...,
+                      show.legend = NA,
+                      inherit.aes = TRUE,
+                      na.rm = FALSE,
+                      crs = "NAD27" # "NAD27", 5070, "WGS84", "NAD83", 4326 , 3857
+) {
+  
+  StatTemp <- 
+   ggplot2::ggproto("StatTemp", 
+                   ggplot2::Stat,
+                   compute_panel = compute_rasa)
+  
+    if(!is.null(geo_ref_data) & is.null(fun)){
+    
+      
+      fun <- function(data, keep_id = NULL, 
+                                       drop_id = NULL, 
+                                       stamp = FALSE){
+  
+             if(!stamp){data <- dplyr::inner_join(data, geo_ref_data)}
+             if( stamp){data <- geo_ref_data }
+             
+             if(!is.null(keep_id)){ data <- dplyr::filter(data, id_col %in% keep_id) }
+             if(!is.null(drop_id)){ data <- dplyr::filter(data, !(id_col %in% drop_id))}
+             
+             data
+  
+      }
+    
+    
+  }
+  
+  
+   # Check arguments 
+   if (!is.function(fun)) stop ("fun must be a function")
+   
+   # Pass dotted arguments to a list
+   fun.args <- match.call(expand.dots = FALSE)$`...`
+   
+   if(!is.null(required_aes)){StatTemp$required_aes <- required_aes}
+   if(!is.null(default_aes)){StatTemp$default_aes <- default_aes}
+   if(!is.null(dropped_aes)){StatTemp$dropped_aes <- dropped_aes}
+   
+     c(ggplot2::layer_sf(
+              data = data,
+              mapping = mapping,
+              stat = StatTemp,  # proto object from step 2
+              geom = geom,  # inherit other behavior
+              position = position,
+              show.legend = show.legend,
+              inherit.aes = inherit.aes,
+              check.aes = FALSE,
+              check.param = FALSE,
+              params = rlang::list2(
+                fun = fun, 
+                fun.args = fun.args,
+                na.rm = na.rm, ...)
+              ),
+              
+              ggplot2::coord_sf(crs = crs,
+                       default_crs = sf::st_crs(crs),
+                       datum = crs,
+                       default = TRUE)
+     )
+   
 }
 ```
 
 
-# maybe something sf-facing
-
+# Examples
 
 ## geom_means
 
 ```{r}
 library(tidyverse)
-group_means <- function(data, scales){
+group_means <- function(data){
   
  data |> 
     summarise(x = mean(x),
@@ -98,7 +329,7 @@ group_means <- function(data, scales){
 }
 
 geom_means <- function(...){
-  geom_point(stat = qstat(group_means), ...)
+  stat_group(fun = group_means, ...)
 }
 
 mtcars |>
@@ -116,7 +347,7 @@ last_plot() +
 ## geom_center_label
 
 ```{r}
-group_label_at_center <- function(data, scales){
+group_label_at_center <- function(data){
   
  data %>% 
     group_by(label) %>% 
@@ -126,7 +357,7 @@ group_label_at_center <- function(data, scales){
 }
 
 geom_center_label <- function(...){
-  geom_label(stat = qstat(group_label_at_center), ...)
+  stat_group(fun = group_label_at_center, geom = GeomLabel, ...)
 }
 
 
@@ -144,7 +375,7 @@ last_plot() +
 
 
 geom_center_text <- function(...){
-  geom_text(stat = qstat(group_label_at_center), ...)
+  stat_group(fun = group_label_at_center, geom = GeomText, ...)
 }
 
 
@@ -167,7 +398,7 @@ layer_data(i = 2)
 ## geom_post
 
 ```{r}
-compute_post <- function(data, scales){
+compute_post <- function(data){
   
   data %>% 
     mutate(xend = x,
@@ -176,7 +407,7 @@ compute_post <- function(data, scales){
 }
 
 geom_post <- function(...){
-  geom_segment(stat = qstat(compute_post), ...)
+  stat_group(fun = compute_post, geom = "segment", ...)
 }
 
 
@@ -194,7 +425,7 @@ data.frame(outcome = 0:1, prob = c(.4, .6)) |>
 ## geom_xmean
 
 ```{r}
-compute_xmean <- function(data, scales){
+compute_xmean <- function(data){
   
   data %>% 
     summarize(xintercept = mean(x))
@@ -202,9 +433,8 @@ compute_xmean <- function(data, scales){
 }
 
 geom_xmean <- function(...){
-  qlayer(stat = qstat(compute_xmean, 
-                      dropped_aes = c("x", "y")), 
-         geom = "vline", ...)
+  stat_group(fun = compute_xmean, geom = "vline", 
+             dropped_aes = c("x", "y"), ...)
 }
 
 mtcars |>
@@ -221,7 +451,7 @@ last_plot() +
 ## geom_quantile
 
 ```{r}
-compute_xy_quantile <- function(data, scales, q = .5){
+compute_xy_quantile <- function(data, q = .5){
   
   data %>% 
     summarise(x = quantile(x, q),
@@ -230,7 +460,7 @@ compute_xy_quantile <- function(data, scales, q = .5){
 }
 
 geom_quantile <- function(...){
-  geom_point(stat = qstat(compute_xy_quantile), ...)  #adding point means that aes is automatically figured out! ok
+  stat_group(fun = compute_xy_quantile, "point", ...)  #adding point means that aes is automatically figured out! ok
 }
 
 mtcars |>
@@ -247,8 +477,8 @@ mtcars |>
 
 ## `geom_highlight()`
 
-```{r, eval = F}
-compute_panel_highlight <- function(data, scales, which_id = NULL){
+```{r}
+compute_panel_highlight <- function(data, which_id = NULL){
 
 data %>% 
   arrange(highlight_condition) %>%
@@ -258,10 +488,9 @@ data %>%
 
 stat_highlight <- function(geom = "line", ...){
   
-  qlayer(stat = qstat(compute_panel_highlight, 
-                      default_aes = 
-                        aes(color = after_stat(highlight_condition))), 
+  stat_panel(fun = compute_panel_highlight, 
              geom = geom, 
+             default_aes = aes(color = after_stat(highlight_condition)),
              ...)
 }
 
@@ -292,18 +521,12 @@ gapminder::gapminder %>%
 
 Since were organize with variable function input in first position and geom in section position, and we can do one-liners (or two) use positioning for arguments.
 
-```{r}
-knitr::knit_exit()
-
-```
-
-
 ## `geom_xmean_line()` in 137 characters
 
 ```{r}
 library(tidyverse)
 
-geom_xmean_line <- function(...){qlayer(stat = qstat(function(df) df |> summarize(xintercept = mean(x))), geom =  "vline", dropped_aes = c("x", "y"), ...)}
+geom_xmean_line <- function(...){stat_group(function(df) df |> summarize(xintercept = mean(x)), "vline", dropped_aes = c("x", "y"), ...)}
 
 
 ggplot(cars) +
