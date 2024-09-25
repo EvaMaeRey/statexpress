@@ -11,6 +11,12 @@
   - [geom_quantile](#geom_quantile)
   - [`geom_highlight()`](#geom_highlight)
 - [One-liners?](#one-liners)
+  - [`geom_xmean_line()` in 137
+    characters](#geom_xmean_line-in-137-characters)
+  - [`geom_xmean` in 99 characters](#geom_xmean-in-99-characters)
+  - [`geom_post()` in 101 characters, `stat_expectedvalue()` in 113,
+    `geom_expectedvalue_label()`
+    171…](#geom_post-in-101-characters-stat_expectedvalue-in-113-geom_expectedvalue_label-171)
 
 ``` r
 devtools::create(".")
@@ -59,7 +65,7 @@ knitrExtra:::chunk_to_r("a_qstat")
 ```
 
 ``` r
-qstat <- function(compute_group, ...) {
+qstat <- function(compute_group = ggplot2::Stat$compute_group, ...) {
 
   ggproto("StatTemp", Stat, compute_group = compute_group, ...)
   
@@ -300,7 +306,7 @@ data %>%
 
 stat_highlight <- function(geom = "line", ...){
   
-  qlayer(stat = qstat(compute_panel_highlight, 
+  qlayer(stat = qstat(compute_panel = compute_panel_highlight, 
                       default_aes = 
                         aes(color = after_stat(highlight_condition))), 
              geom = geom, 
@@ -314,7 +320,12 @@ gapminder::gapminder %>%
       grouping = country, 
       highlight_condition = 
         country == "Bolivia") + 
-  geom_highlight(linewidth = 3)
+  stat_highlight(linewidth = 3)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+``` r
 
 gapminder::gapminder %>% 
   filter(year == 2002) %>% 
@@ -323,16 +334,129 @@ gapminder::gapminder %>%
       grouping = continent, 
       highlight_condition = 
         continent == "Europe") + 
-  geom_highlight(geom = "point") + 
+  stat_highlight(geom = "point") + 
   scale_x_log10() + 
   scale_color_manual(values = c("grey", "darkolivegreen"))
 ```
+
+![](README_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 # One-liners?
 
 Since were organize with variable function input in first position and
 geom in section position, and we can do one-liners (or two) use
 positioning for arguments.
+
+## `geom_xmean_line()` in 137 characters
+
+``` r
+library(tidyverse)
+
+geom_xmean_line <- function(...){qlayer(stat = qstat(compute_group = function(data, scales){data |> summarize(xintercept = mean(x))}, dropped_aes = c("x", "y")), geom =  "vline", ...)}
+
+
+ggplot(cars) +
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_xmean_line(linetype = 'dashed')
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+  
+last_plot() + 
+  aes(color = dist > 50)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
+
+``` r
+
+ggplot(cars) +
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_xmean_line(linetype = 'dashed', 
+                  data = . %>% tail,
+                  aes(color = dist > 50))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-3.png)<!-- -->
+
+``` r
+
+ggplot(cars) +
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_xmean_line(data = . %>% filter(speed < 10))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-4.png)<!-- -->
+
+## `geom_xmean` in 99 characters
+
+``` r
+geom_xmean <- function(...){geom_point(stat = qstat(function(data, scales){data |> summarize(x = mean(x), y = I(.025))}), ...)}
+
+ggplot(cars) +
+  aes(speed, dist) + 
+  geom_point() + 
+  geom_xmean(size = 8, shape = "diamond") 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  aes(color = dist > 50)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+
+## `geom_post()` in 101 characters, `stat_expectedvalue()` in 113, `geom_expectedvalue_label()` 171…
+
+May I buy a visually enhanced probability lesson for 400 characters? Yes
+please.
+
+``` r
+geom_post <- function(...){geom_segment(stat = qstat(function(data,scales){data |> mutate(xend = x, yend = 0)}), ...)}
+
+data.frame(prob = c(.4,.6), outcome = c(0, 1)) %>% 
+ggplot(data = .) +
+  aes(outcome, prob) + 
+  geom_post() +
+  geom_point() 
+```
+
+![](README_files/figure-gfm/cars-1.png)<!-- -->
+
+``` r
+
+stat_expectedvalue <- function(geom = "point", ...){
+  
+  qlayer(stat = qstat(function(data, scales){data |> summarise(x = sum(x*y), y = 0)},
+                      default_aes = aes(label = after_stat(round(x, 2)))), 
+             geom = geom, 
+             ...)
+  
+  } # point is default geom
+
+last_plot() + 
+  stat_expectedvalue()
+```
+
+![](README_files/figure-gfm/cars-2.png)<!-- -->
+
+``` r
+
+last_plot() +
+  stat_expectedvalue(geom = "text", vjust = 0) + 
+  stat_expectedvalue(geom = "text", label = "The Expected Value",
+                     vjust = 1)
+```
+
+![](README_files/figure-gfm/cars-3.png)<!-- -->
 
 ``` r
 knitr::knit_exit()
