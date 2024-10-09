@@ -1,8 +1,6 @@
 
 - [`qstat`](#qstat)
 - [`qlayer()`](#qlayer)
-  - [see sf2stat for sf-specific function
-    qlayer_sf](#see-sf2stat-for-sf-specific-function-qlayer_sf)
 - [a bunch of examples and ad-hoc
   tests…](#a-bunch-of-examples-and-ad-hoc-tests)
   - [geom_means](#geom_means)
@@ -324,8 +322,6 @@ speed your definitions along, if you’re layer specification is
 anticipated to be a tad vanilla (as mine, for example, mostly are!).
 
 ``` r
-
-
 stat_means <- function(geom = "point", ...){
  
   qlayer(geom = geom, stat = StatMeans, ...)
@@ -345,7 +341,84 @@ ggplot(palmerpenguins::penguins) +
 
 ![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-## see sf2stat for sf-specific function qlayer_sf
+Some new ideas…
+
+3.  `qproto_update()` … qproto_update(\_inherit = GeomPoint,
+    default_aes_update = aes(color = “blue”))
+
+4.  `default_aes_update()` …
+
+``` r
+library(tidyverse)
+
+
+proto_update <- function(`_class`, `_inherit`, default_aes_update = NULL, ...){
+  
+  if(!is.null(default_aes_update)){
+  
+    default_aes <- aes(!!!modifyList(`_inherit`$default_aes, default_aes_update))
+    
+    }
+  
+  ggproto(`_class`, `_inherit` = `_inherit`, default_aes = default_aes, ...)
+  
+}
+
+GeomPointCornflowerblue <- proto_update("GeomPointCornflowerblue", 
+                                    GeomPoint,
+                                    default_aes_update = aes(color = "cornflowerblue"))
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = GeomPointCornflowerblue,
+          stat = StatIdentity,
+          position = "identity")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+
+qproto_update <- function(`_inherit`, default_aes_update = NULL, ...){
+  
+  proto_update("protoTemp", 
+               `_inherit`, 
+               default_aes_update = default_aes_update,
+               ...)
+  
+}
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = qproto_update(GeomPoint, aes(color = "blue")),
+          stat = StatIdentity,
+          position = "identity")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+
+``` r
+
+
+default_aes_update <- function(`_inherit`, update){
+  
+  aes(!!!modifyList(`_inherit`$default_aes, update))
+  
+}
+
+
+GeomPointPink <- ggproto("GeomPointPink", GeomPoint, 
+                         default_aes = 
+                           default_aes_update(GeomPoint, aes(color = "pink")))
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = GeomPointPink,
+          stat = StatIdentity,
+          position = "identity")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
 
 # a bunch of examples and ad-hoc tests…
 
@@ -375,7 +448,7 @@ mtcars |>
   geom_means(size = 6)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 
@@ -383,7 +456,7 @@ last_plot() +
   aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
 
 ``` r
 
@@ -396,7 +469,7 @@ mtcars |>
   geom_means(size = 6, show.legend = F)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
 
 ``` r
 
@@ -409,7 +482,7 @@ mtcars |>
   aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
 
 ## geom_center_label
 
@@ -439,7 +512,7 @@ palmerpenguins::penguins |>
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 
@@ -450,7 +523,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
 
 ``` r
 
@@ -476,7 +549,7 @@ palmerpenguins::penguins |>
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
 
 ``` r
 
@@ -516,7 +589,7 @@ data.frame(outcome = 0:1, prob = c(.4, .6)) |>
   labs(title = "probability by outcome")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ## geom_xmean
 
@@ -542,7 +615,7 @@ mtcars |>
   geom_xmean(linetype = "dashed")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 
@@ -550,7 +623,7 @@ last_plot() +
   aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
 
 ## geom_quantile
 
@@ -579,7 +652,7 @@ mtcars |>
   geom_quantile(aes(color = "q =  .9"), size = 8, q = .9)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ## `geom_highlight()`
 
@@ -611,7 +684,7 @@ gapminder::gapminder %>%
   stat_highlight(linewidth = 3)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 
@@ -626,7 +699,7 @@ gapminder::gapminder %>%
   scale_color_manual(values = c("grey", "darkolivegreen"))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
 
 # One-liners?
 
@@ -648,7 +721,7 @@ ggplot(cars) +
   geom_xmean_line(linetype = 'dashed')
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
  
@@ -656,7 +729,7 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
 
 ``` r
 
@@ -668,7 +741,7 @@ ggplot(cars) +
                   aes(color = dist > 50))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-3.png)<!-- -->
 
 ``` r
 
@@ -678,7 +751,7 @@ ggplot(cars) +
   geom_xmean_line(data = . %>% filter(speed < 10))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-19-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-20-4.png)<!-- -->
 
 ## `geom_xmean` in 99 characters
 
@@ -691,7 +764,7 @@ ggplot(cars) +
   geom_xmean(size = 8, shape = "diamond")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 
@@ -699,7 +772,7 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
 
 ## `geom_post()` in 101 characters, `stat_expectedvalue()` in 113, `geom_expectedvalue_label()` 171…
 
@@ -759,7 +832,7 @@ rep(1, 15) |>
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 ``` r
 
@@ -773,7 +846,7 @@ last_plot() +
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-2.png)<!-- -->
 
 ``` r
 
@@ -785,7 +858,7 @@ last_plot() +
 #> `binwidth`.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-21-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-3.png)<!-- -->
 
 ``` r
 
@@ -830,7 +903,7 @@ palmerpenguins::penguins %>%
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 
@@ -842,7 +915,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
 
 ``` r
 
@@ -859,7 +932,7 @@ last_plot() +
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-22-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-3.png)<!-- -->
 
 ## `geom_grouplabel_at_means()`
 
@@ -875,7 +948,7 @@ palmerpenguins::penguins %>%
 #> (`geom_point()`).
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 # Part II. Packaging and documentation 🚧 ✅
 
@@ -941,7 +1014,7 @@ ggplot(cars) +
   geom_xbalance(size = 8, shape = "diamond")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ``` r
 
@@ -949,7 +1022,7 @@ last_plot() +
   aes(color = dist > 50)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-27-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-28-2.png)<!-- -->
 
 ``` r
 
@@ -958,7 +1031,7 @@ last_plot() +
 #> Warning: Using size for a discrete variable is not advised.
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-27-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-28-3.png)<!-- -->
 
 ``` r
 # for quick knit (exiting early) change eval to TRUE
@@ -1017,6 +1090,8 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-19-4.png
 #> │       ├── unnamed-chunk-20-1.png
 #> │       ├── unnamed-chunk-20-2.png
+#> │       ├── unnamed-chunk-20-3.png
+#> │       ├── unnamed-chunk-20-4.png
 #> │       ├── unnamed-chunk-21-1.png
 #> │       ├── unnamed-chunk-21-2.png
 #> │       ├── unnamed-chunk-21-3.png
@@ -1026,9 +1101,13 @@ fs::dir_tree(recurse = T)
 #> │       ├── unnamed-chunk-23-1.png
 #> │       ├── unnamed-chunk-23-2.png
 #> │       ├── unnamed-chunk-23-3.png
+#> │       ├── unnamed-chunk-24-1.png
 #> │       ├── unnamed-chunk-27-1.png
 #> │       ├── unnamed-chunk-27-2.png
 #> │       ├── unnamed-chunk-27-3.png
+#> │       ├── unnamed-chunk-28-1.png
+#> │       ├── unnamed-chunk-28-2.png
+#> │       ├── unnamed-chunk-28-3.png
 #> │       ├── unnamed-chunk-3-1.png
 #> │       ├── unnamed-chunk-5-1.png
 #> │       ├── unnamed-chunk-5-2.png

@@ -53,6 +53,8 @@ A few approaches have been combine here.
 1. `qstat()`...
 2. `qlayer()`...
 
+
+
 Let's go!
 
 # `qstat`
@@ -267,8 +269,6 @@ ggplot(faithful) +
 It is also possible of course to commit to a Stat, and use qlayer to speed your definitions along, if you're layer specification is anticipated to be a tad vanilla (as mine, for example, mostly are!).
 
 ```{r}
-
-
 stat_means <- function(geom = "point", ...){
  
   qlayer(geom = geom, stat = StatMeans, ...)
@@ -288,10 +288,80 @@ ggplot(palmerpenguins::penguins) +
 
 ```
 
+Some new ideas...
+
+3. `qproto_update()` ... qproto_update(_inherit = GeomPoint, default_aes_update = aes(color = "blue")) 
+
+
+4. `default_aes_update()` ...
+
+```{r}
+library(tidyverse)
+
+
+proto_update <- function(`_class`, `_inherit`, default_aes_update = NULL, ...){
+  
+  if(!is.null(default_aes_update)){
+  
+    default_aes <- aes(!!!modifyList(`_inherit`$default_aes, default_aes_update))
+    
+    }
+  
+  ggproto(`_class`, `_inherit` = `_inherit`, default_aes = default_aes, ...)
+  
+}
+
+GeomPointCornflowerblue <- proto_update("GeomPointCornflowerblue", 
+                                    GeomPoint,
+                                    default_aes_update = aes(color = "cornflowerblue"))
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = GeomPointCornflowerblue,
+          stat = StatIdentity,
+          position = "identity")
+
+qproto_update <- function(`_inherit`, default_aes_update = NULL, ...){
+  
+  proto_update("protoTemp", 
+               `_inherit`, 
+               default_aes_update = default_aes_update,
+               ...)
+  
+}
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = qproto_update(GeomPoint, aes(color = "blue")),
+          stat = StatIdentity,
+          position = "identity")
+
+
+default_aes_update <- function(`_inherit`, update){
+  
+  aes(!!!modifyList(`_inherit`$default_aes, update))
+  
+}
+
+
+GeomPointPink <- ggproto("GeomPointPink", GeomPoint, 
+                         default_aes = 
+                           default_aes_update(GeomPoint, aes(color = "pink")))
+
+ggplot(cars) + 
+  aes(speed, dist) + 
+    layer(geom = GeomPointPink,
+          stat = StatIdentity,
+          position = "identity")
 
 
 
-## see sf2stat for sf-specific function qlayer_sf
+
+
+
+```
+
+
 
 # a bunch of examples and ad-hoc tests...
 
