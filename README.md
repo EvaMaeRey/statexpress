@@ -1,6 +1,7 @@
 
 - [`qstat`](#qstat)
 - [`qlayer()`](#qlayer)
+- [`proto_update` and `qproto_update`](#proto_update-and-qproto_update)
 - [a bunch of examples and ad-hoc
   tests…](#a-bunch-of-examples-and-ad-hoc-tests)
   - [geom_means](#geom_means)
@@ -340,6 +341,8 @@ ggplot(palmerpenguins::penguins) +
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+# `proto_update` and `qproto_update`
 
 Some new ideas…
 

@@ -288,6 +288,8 @@ ggplot(palmerpenguins::penguins) +
 
 ```
 
+# `proto_update` and `qproto_update`
+
 Some new ideas...
 
 3. `qproto_update()` ... qproto_update(_inherit = GeomPoint, default_aes_update = aes(color = "blue")) 
