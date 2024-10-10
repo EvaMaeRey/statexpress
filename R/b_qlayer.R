@@ -1,18 +1,19 @@
+#' @export
 qlayer <- function (mapping = NULL,
                     data = NULL,
-                    stat = StatIdentity,
                     geom = GeomPoint,
+                    stat = StatIdentity,
                     position = position_identity(),
                     ...,
                     na.rm = FALSE,
                     show.legend = NA,
                     inherit.aes = TRUE)
 {
-  layer(
+  ggplot2::layer(
     data = data,
     mapping = mapping,
-    stat = stat,
     geom = geom,
+    stat = stat,
     position = position,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
